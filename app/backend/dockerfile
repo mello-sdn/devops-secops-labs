@@ -4,11 +4,9 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
-
 COPY . .
 
-RUN npm prune --omit=dev
+RUN npm install --omit=dev
 
 
 FROM node:22-alpine
@@ -18,6 +16,8 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY --from=build /app .
+
+USER node
 
 EXPOSE 5000
 
