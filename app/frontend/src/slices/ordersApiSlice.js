@@ -1,4 +1,4 @@
-import { ORDERS_URL, RAZORPAY_URL } from '../constants';
+import { ORDERS_URL, STRIPE_URL } from '../constants';
 import { apiSlice } from './apiSlice';
 
 export const ordersApiSlice = apiSlice.injectEndpoints({
@@ -38,9 +38,9 @@ export const ordersApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ['Order']
     }),
-    getRazorpayApiKey: builder.query({
+    getStripePublishableKey: builder.query({
       query: () => ({
-        url: `${RAZORPAY_URL}/razorpay/config`
+        url: `${STRIPE_URL}/stripe/config`
       }),
       providesTags: ['Order']
     }),
@@ -58,7 +58,7 @@ export const {
   useCreateOrderMutation,
   usePayOrderMutation,
   useUpdateDeliverMutation,
-  useGetRazorpayApiKeyQuery,
+  useGetStripePublishableKeyQuery,
   useGetMyOrdersQuery,
   useGetOrdersQuery
 } = ordersApiSlice;

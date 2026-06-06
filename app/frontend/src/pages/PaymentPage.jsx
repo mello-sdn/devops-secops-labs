@@ -7,7 +7,7 @@ import FormContainer from '../components/FormContainer';
 import CheckoutSteps from '../components/CheckoutSteps';
 import Meta from '../components/Meta';
 const Payment = () => {
-  const [paymentMethod, setPaymentMethod] = useState('Razorpay');
+  const [paymentMethod, setPaymentMethod] = useState('Stripe');
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -37,10 +37,10 @@ const Payment = () => {
             <Form.Check
               className='my-2'
               type='radio'
-              id='Razorpay'
-              label='Razorpay'
+              id='Stripe'
+              label='Stripe'
               name='paymentMethod'
-              value='Razorpay'
+              value='Stripe'
               checked
               onChange={e => setPaymentMethod(e.target.value)}
             ></Form.Check>

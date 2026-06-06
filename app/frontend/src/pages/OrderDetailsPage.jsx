@@ -1,16 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 
 import { useParams, Link } from 'react-router-dom';
-import { Row, Col, ListGroup, Button, Image, Card } from 'react-bootstrap';
+import { Row, Col, ListGroup, Button, Image, Card, Form } from 'react-bootstrap';
 import {
   useGetOrderDetailsQuery,
   usePayOrderMutation,
   useUpdateDeliverMutation,
-  useGetRazorpayApiKeyQuery
+  useGetStripePublishableKeyQuery
 } from '../slices/ordersApiSlice';
 import { useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
-import { FaIndianRupeeSign } from 'react-icons/fa6';
+import { CardElement, useStripe, useElements, Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import Loader from '../components/Loader';
 import Message from '../components/Message';
 import ServerError from '../components/ServerError';
@@ -18,85 +19,92 @@ import ServerError from '../components/ServerError';
 import axios from 'axios';
 import Meta from '../components/Meta';
 import { addCurrency } from '../utils/addCurrency';
-// import { RAZORPAY_URL } from '../constants';
+
+const StripePayForm = ({ orderId, order, payOrder, onSuccess }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+
+  const handleSubmit = async e => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+    setProcessing(true);
+
+    const { error, paymentIntent } = await stripe.confirmCardPayment(
+      elements.getElement(CardElement)
+    );
+
+    if (error) {
+      toast.error(error.message);
+      setProcessing(false);
+    } else if (paymentIntent.status === 'succeeded') {
+      const details = {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        updateTime: new Date().toLocaleTimeString(),
+        email: order?.user?.email
+      };
+      await payOrder({ orderId, details });
+      toast.success('Payment successful');
+      onSuccess();
+    }
+  };
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      <CardElement
+        options={{
+          style: {
+            base: {
+              fontSize: '16px',
+              color: '#424770',
+              '::placeholder': { color: '#aab7c4' }
+            },
+            invalid: { color: '#9e2146' }
+          }
+        }}
+      />
+      <Button
+        className='w-100 mt-3'
+        variant='warning'
+        type='submit'
+        disabled={!stripe || processing}
+      >
+        {processing ? 'Processing...' : 'Pay Now'}
+      </Button>
+    </Form>
+  );
+};
+
 const OrderDetailsPage = () => {
   const { id: orderId } = useParams();
-  // console.log(useGetOrderDetailsQuery());
   const { data: order, isLoading, error } = useGetOrderDetailsQuery(orderId);
+  const [clientSecret, setClientSecret] = useState(null);
+  const [creatingIntent, setCreatingIntent] = useState(false);
 
-  const [payOrder, { isLoading: isPayOrderLoading }] = usePayOrderMutation();
+  const [payOrder] = usePayOrderMutation();
   const [updateDeliver, { isLoading: isUpdateDeliverLoading }] =
     useUpdateDeliverMutation();
 
   const { userInfo } = useSelector(state => state.auth);
 
-  const { data: razorpayApiKey } = useGetRazorpayApiKeyQuery();
+  const { data: stripeKey } = useGetStripePublishableKeyQuery();
+  const stripePromise = stripeKey
+    ? loadStripe(stripeKey.publishableKey)
+    : null;
 
-  const paymentHandler = async e => {
+  const paymentHandler = async () => {
     try {
-      // Make the API call to Razorpay
-
-      const razorpayData = {
-        amount: order.totalPrice * 100, // Razorpay expects the amount in paisa, so multiply by 100
-        currency: 'INR',
-        receipt: `receipt#${orderId}`
-      };
+      setCreatingIntent(true);
       const { data } = await axios.post(
-        '/api/v1/payment/razorpay/order',
-        razorpayData
+        '/api/v1/payment/stripe/create-payment-intent',
+        { amount: order.totalPrice }
       );
-
-      const { id: razorpayOrderId } = data;
-
-      const options = {
-        key: razorpayApiKey.razorpayKeyId, // Enter the Key ID generated from the Dashboard
-        amount: razorpayData.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
-        currency: razorpayData.currency,
-        name: 'MERN Shop', //your business name
-        description: 'Test Transaction',
-        image: 'https://example.com/your_logo',
-        order_id: razorpayOrderId, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
-        handler: async response => {
-          try {
-            const { data } = await axios.post(
-              `/api/v1/payment/razorpay/order/validate`,
-              response
-            );
-            const details = { ...data, email: order?.user?.email };
-            await payOrder({ orderId, details });
-            toast.success(data.message);
-          } catch (error) {
-            toast.error(error?.data?.message || error.error);
-          }
-        },
-        prefill: {
-          //We recommend using the prefill parameter to auto-fill customer's contact information, especially their phone number
-          name: order?.user?.name, //your customer's name
-          email: order?.user?.email
-          // contact: '9000090000' //Provide the customer's phone number for better conversion rates
-        },
-        notes: {
-          address: 'MERN Shop Office'
-        },
-        theme: {
-          color: '#FFC107'
-        }
-      };
-      var rzp1 = new window.Razorpay(options);
-      rzp1.open();
-      // e.preventDefault();
-
-      // rzp1.on('payment.failed', response => {
-      //   alert(response.error.code);
-      //   alert(response.error.description);
-      //   alert(response.error.source);
-      //   alert(response.error.step);
-      //   alert(response.error.reason);
-      //   alert(response.error.metadata.order_id);
-      //   alert(response.error.metadata.payment_id);
-      // });
+      setClientSecret(data.clientSecret);
     } catch (error) {
       toast.error(error?.data?.message || error.error);
+    } finally {
+      setCreatingIntent(false);
     }
   };
 
@@ -224,17 +232,29 @@ const OrderDetailsPage = () => {
                       <Col>{addCurrency(order?.totalPrice)}</Col>
                     </Row>
                   </ListGroup.Item>
-                  {!order?.isPaid && !userInfo.isAdmin && (
+                  {!order?.isPaid && !userInfo.isAdmin && !clientSecret && (
                     <ListGroup.Item>
                       <Button
                         className='w-100'
                         variant='warning'
                         onClick={paymentHandler}
-                        disabled={isPayOrderLoading}
+                        disabled={creatingIntent}
                         style={{ marginBottom: '10px' }}
                       >
-                        Pay Order
+                        {creatingIntent ? 'Loading...' : 'Pay Order'}
                       </Button>
+                    </ListGroup.Item>
+                  )}
+                  {!order?.isPaid && clientSecret && stripePromise && (
+                    <ListGroup.Item>
+                      <Elements stripe={stripePromise} options={{ clientSecret }}>
+                        <StripePayForm
+                          orderId={orderId}
+                          order={order}
+                          payOrder={payOrder}
+                          onSuccess={() => setClientSecret(null)}
+                        />
+                      </Elements>
                     </ListGroup.Item>
                   )}
                   {userInfo &&
