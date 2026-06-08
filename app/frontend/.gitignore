@@ -1,0 +1,28 @@
+# Node
+node_modules/
+
+# Build
+build/
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Test coverage
+coverage/
+
+# Misc
+*.local
