@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+
+  database:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand({ping:1})' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  seeder:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: npm run seed
+    env_file: backend/.env
+    environment:
+      - MONGO_URI=mongodb://database:27017/app
+    depends_on:
+      database:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file: backend/.env
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://database:27017/app
+    volumes:
+      - ./uploads:/uploads
+    depends_on:
+      seeder:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5000/readyz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  backend_uploads:
