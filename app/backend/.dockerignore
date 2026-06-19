@@ -6,6 +6,5 @@ node_modules
 Dockerfile*
 docker-compose*
 *.log
-uploads
 .vscode
 .idea
