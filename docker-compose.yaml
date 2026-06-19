@@ -12,19 +12,9 @@ services:
       timeout: 5s
       retries: 5
 
-  seeder:
-    build:
-      context: app/backend/
-      dockerfile: Dockerfile
-    command: npm run seed
-    env_file: app/backend/.env
-    environment:
-      - MONGO_URI=mongodb://database:27017/app
-    depends_on:
-      database:
-        condition: service_healthy
 
   backend:
+    image: app_backend
     build:
       context: app/backend/
       dockerfile: Dockerfile
@@ -33,7 +23,7 @@ services:
       - NODE_ENV=production
       - MONGO_URI=mongodb://database:27017/app
     volumes:
-      - ./uploads:/app/uploads
+      - ./app/backend/uploads:/app/backend/uploads
     depends_on:
       seeder:
         condition: service_completed_successfully
@@ -44,6 +34,7 @@ services:
       retries: 3
     restart: unless-stopped
 
+
   frontend:
     build:
       context: app/frontend/
@@ -51,6 +42,17 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  seeder:
+      image: app_backend 
+      command: npm run seed  
+      env_file: app/backend/.env
+      environment:
+        - MONGO_URI=mongodb://database:27017/app
+      depends_on:
+        database:
+          condition: service_healthy
+
 
   nginx:
     build:
@@ -65,4 +67,3 @@ services:
 
 volumes:
   mongo_data:
-  backend_uploads:

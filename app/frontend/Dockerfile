@@ -10,15 +10,8 @@ COPY . .
 
 RUN npm run build
 
-FROM nginx:alpine
+FROM nginxinc/nginx-unprivileged:1.30-alpine
 
 COPY --from=builder /app/build /usr/share/nginx/html
-
-<<<<<<< Updated upstream
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-=======
->>>>>>> Stashed changes
-EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
