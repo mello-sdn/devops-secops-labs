@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
+import mongoose from 'mongoose';
 import 'dotenv/config';
 
 import productRoutes from './routes/productRoutes.js';
@@ -21,7 +22,9 @@ const __dirname = path.dirname(__filename);
 
 const port = process.env.PORT || 5000;
 
-connectDB();
+if (process.env.NODE_ENV !== 'test') {
+  connectDB();
+}
 
 const app = express();
 
@@ -40,7 +43,7 @@ app.get('/healthz', (req, res) => {
 
 app.get('/readyz', async (req, res) => {
   try {
-    const dbState = require('mongoose').connection.readyState;
+    const dbState = mongoose.connection.readyState;
     if (dbState !== 1) {
       return res.status(503).json({ status: 'not ready', reason: 'database disconnected' });
     }
@@ -71,25 +74,28 @@ if (process.env.NODE_ENV === 'production') {
 app.use(notFound);
 app.use(errorHandler);
 
-const server = app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}/`);
-});
+export { app };
 
-const shutdown = (signal) => {
-  console.log(`${signal} received. Shutting down gracefully...`);
-  server.close(async () => {
-    console.log('HTTP server closed.');
-    const mongoose = (await import('mongoose')).default;
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed.');
-    process.exit(0);
+if (process.env.NODE_ENV !== 'test') {
+  const server = app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}/`);
   });
 
-  setTimeout(() => {
-    console.error('Forceful shutdown after timeout');
-    process.exit(1);
-  }, 10000);
-};
+  const shutdown = (signal) => {
+    console.log(`${signal} received. Shutting down gracefully...`);
+    server.close(async () => {
+      console.log('HTTP server closed.');
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    });
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+    setTimeout(() => {
+      console.error('Forceful shutdown after timeout');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+}
