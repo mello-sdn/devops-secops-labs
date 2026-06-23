@@ -1,0 +1,43 @@
+name: application pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: install node.js 
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: install dependencies
+        run: cd app/backend && npm ci
+      - name: launch tests
+        run: cd app/backend && npm test
+        env:
+          STRIPE_API_KEY: "sk_test_mockup"
+          JWT_SECRET: "sk_test_jwt"
+
+  build-and-secure:
+      runs-on: ubuntu-latest
+      needs: run-tests
+      strategy:
+        fail-fast: false
+        matrix: 
+          composant: [backend, frontend, nginx]
+      steps:
+        - uses: actions/checkout@v4
+        - name: build images
+          run: |
+            docker build -t app /${{ matrix.composant }}:latest ./app/${{ matrix.composant }}
+        - uses: aquasecurity/trivy-action@v0.36.0
+          name: scan images
+          with: 
+            image-ref: 'app/${{ matrix.composant }}:latest'
+            format: 'table'
+            exit-code: "1"
+            ignore-unfixed: true
+            severity: 'HIGH,CRITICAL'
