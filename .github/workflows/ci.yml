@@ -32,12 +32,12 @@ jobs:
         - uses: actions/checkout@v4
         - name: build images
           run: |
-            docker build -t app /${{ matrix.composant }}:latest ./app/${{ matrix.composant }}
-        - uses: aquasecurity/trivy-action@v0.36.0
-          name: scan images
+            docker build -t app/${{ matrix.composant }}:latest ./app/${{ matrix.composant }}
+        - name: scan images
+          uses: aquasecurity/trivy-action@v0.28.0
           with: 
             image-ref: 'app/${{ matrix.composant }}:latest'
             format: 'table'
-            exit-code: "1"
+            exit-code: '1'
             ignore-unfixed: true
             severity: 'HIGH,CRITICAL'
