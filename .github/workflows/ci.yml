@@ -34,7 +34,7 @@ jobs:
           run: |
             docker build -t app/${{ matrix.composant }}:latest ./app/${{ matrix.composant }}
         - name: scan images
-          uses: aquasecurity/trivy-action@v0.28.0
+          uses: aquasecurity/trivy-action@v0.36.0
           with: 
             image-ref: 'app/${{ matrix.composant }}:latest'
             format: 'table'
