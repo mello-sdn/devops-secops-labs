@@ -18,7 +18,7 @@ jobs:
       - name: launch tests
         run: cd app/backend && npm test
         env:
-          STRIPE_API_KEY: "sk_test_mockup"
+          STRIPE_SECRET_KEY: "sk_test_mockup"
           JWT_SECRET: "sk_test_jwt"
 
   build-and-secure:
