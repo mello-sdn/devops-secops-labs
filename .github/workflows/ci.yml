@@ -2,7 +2,8 @@ name: application pipeline
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - '**'
 
 jobs:
   run-tests:
