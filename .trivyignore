@@ -1,0 +1,14 @@
+# ==============================================================================
+# DEROGATION SECURITE - PIPELINE CI/CD
+# ==============================================================================
+# CVE-2026-12151 : Faille de déni de service (DoS) sur le client WebSocket d'Undici.
+#
+# La faille est située dans le package 'node-gyp' embarqué nativement
+# dans l'outil global 'npm' de l'image de base Node.js. 
+# 1. Aucun correctif officiel n'est encore disponible côté NPM.
+# 2. L'application backend n'utilise pas node-gyp ni le client WebSocket d'Undici en production
+# 3. Risque d'exploitation : Nul pour l'application.
+#
+# Action : À réévaluer dès la prochaine release de NPM.
+# ==============================================================================
+CVE-2026-12151
