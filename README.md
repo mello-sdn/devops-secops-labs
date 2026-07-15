@@ -4,10 +4,10 @@ Ce dépôt regroupe mon lab devSecOps. L'idée est simple : prendre une stack ME
 
 ---
 
-## 🎯 Ma Feuille de Route
+## 🗒️Feuille de Route
 Le projet avance par blocs logiques. Je valide un pilier technique avant de passer au suivant :
 - [x] **1) Sécuriser les conteneurs (Docker)** 🐳 -> *Optimisation du poids des images et suppression des privilèges root.*
-- [ ] **2) Automatiser les contrôles (CI/CD)** 🛠️ -> *Standardisation des builds et scans de vulnérabilités à chaque commit.* **[Focus Actuel]**
+- [x] **2) Automatiser les contrôles (CI/CD)** 🛠️ -> *Standardisation des builds et scans de vulnérabilités à chaque commit.*
 
 ---
 
@@ -15,12 +15,12 @@ Le projet avance par blocs logiques. Je valide un pilier technique avant de pass
 ### 🐋 Container Hardening et Multi-Stage Builds
 * **Le problème :** Mon image de base (Ubuntu) faisait plus d'1 Go et tournait par défaut en `root`. Cela posait un double problème : des temps de build/déploiement trop longs en CI/CD et une plus grande surface d'attaque
 * **Ma solution :** Passage au *Multi-stage build*, ajout d'un USER non root et coté frontend utilisation d'une image nginx avec moins de privilège
-* **Le gain DevOps & SecOps :** L'image finale pèse quelques Mo, ce qui accélère drastiquement le déploiement, Côté sécurité, l'absence d'outils (`curl`, `apt`, `bash`) et l'exécution en `USER nonroot` bloquent toute compromission du système
+* **Bilan :** L'image finale pèse quelques Mo, ce qui accélère drastiquement le déploiement, Côté sécurité, l'absence d'outils (`curl`, `apt`, `bash`) et l'exécution en `USER nonroot` bloquent toute compromission du système
 
 
-### 🛠️ Pipeline CI/CD et sécurité "Shift-Left" [90%]
+### 🛠️ Pipeline CI/CD et sécurité "Shift-Left"
 * **Le problème :** Devoir lancer les tests unitaires, build et scanner les images à la main à chaque modification devenait vite long et source d'erreurs
 * **Ma solution :** Automatisation complète du cycle via **GitHub Actions** en plaçant la sécurité dès le début du flux. Le pipeline intègre un détecteur de secrets (`Gitleaks`) et un scanner d'images (`Trivy`)
-* **Le gain DevOps & SecOps :** Chaque push ou nouvelle feature déclenche automatiquement les tests et le build des images, ce qui offre un gain de temps considérable. Niveau sécurité, la pipeline agit comme barrière : si un secret est détecté ou qu'une CVE de niveau *High* ou *Critical* est trouvée, la CI s'arrête net
+* **Bilan :** Chaque push ou nouvelle feature déclenche automatiquement les tests et le build des images, ce qui offre un gain de temps considérable. Niveau sécurité, la pipeline agit comme barrière : si un secret est détecté ou qu'une CVE de niveau *High* ou *Critical* est trouvée, une notification est envoyé sur Discord grace à un script qui parse les logs trivy et la CI s'arrête net <img width="40%" alt="Discord CI Alert" src="https://github.com/user-attachments/assets/30e0f470-55b1-4d33-81c0-f204f8f09ffd" />
 
 ---
