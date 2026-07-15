@@ -21,6 +21,7 @@ Le projet avance par blocs logiques. Je valide un pilier technique avant de pass
 ### 🛠️ Pipeline CI/CD et sécurité "Shift-Left"
 * **Le problème :** Devoir lancer les tests unitaires, build et scanner les images à la main à chaque modification devenait vite long et source d'erreurs
 * **Ma solution :** Automatisation complète du cycle via **GitHub Actions** en plaçant la sécurité dès le début du flux. Le pipeline intègre un détecteur de secrets (`Gitleaks`) et un scanner d'images (`Trivy`)
-* **Bilan :** Chaque push ou nouvelle feature déclenche automatiquement les tests et le build des images, ce qui offre un gain de temps considérable. Niveau sécurité, la pipeline agit comme barrière : si un secret est détecté ou qu'une CVE de niveau *High* ou *Critical* est trouvée, une notification est envoyé sur Discord grace à un script qui parse les logs trivy et la CI s'arrête net <img width="40%" alt="Discord CI Alert" src="https://github.com/user-attachments/assets/30e0f470-55b1-4d33-81c0-f204f8f09ffd" />
+* **Bilan :** Chaque push ou nouvelle feature déclenche automatiquement les tests et le build des images, ce qui offre un gain de temps considérable. Niveau sécurité, la pipeline agit comme barrière : si un secret est détecté ou qu'une CVE de niveau *High* ou *Critical* est trouvée, une notification est envoyé sur Discord grace à un script qui parse les logs trivy et la CI s'arrête net
+<img width="40%" alt="Discord CI Alert" src="https://github.com/user-attachments/assets/30e0f470-55b1-4d33-81c0-f204f8f09ffd" />
 
 ---
